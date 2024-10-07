@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from datetime import timedelta
+import os
 from pathlib import Path
 from decouple import Config, Csv, config as default_config
 
@@ -198,3 +199,8 @@ CORS_ORIGIN_ALLOW_ALL = True
 #     #    'http://localhost:8080',
 # )
 CORS_EXPOSE_HEADERS = ["*"]
+
+
+# media files
+MEDIA_ROOT = os.path.join(BASE_DIR, "mediafiles/")
+MEDIA_URL = "/media/"
