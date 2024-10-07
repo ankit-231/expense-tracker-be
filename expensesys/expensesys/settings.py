@@ -61,6 +61,10 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     "users",
+    "core",
+    "wallet",
+    "transaction",
+    "extra_feature",
 ]
 
 INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + LOCAL_APPS
