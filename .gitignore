@@ -1,0 +1,16 @@
+.history
+.vscode
+# static
+# staticfiles
+*.pyc
+**/__pycache__/
+mediafiles/
+media/
+**/log/
+**/venv/
+**/.venv/
+*.ini
+.env
+.env.prod
+# *.sqlite3
+
