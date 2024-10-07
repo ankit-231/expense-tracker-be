@@ -14,6 +14,7 @@ from django.db.models.signals import post_save
 
 from core.models import Currency
 from utilities.base_models import BaseModel
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 def custom_upload_to(instance, filename):
@@ -69,7 +70,14 @@ class Budget(BaseModel):
         User, on_delete=models.SET_NULL, null=True, related_name="budgets"
     )
     name = models.CharField(max_length=255)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0.01),
+            MaxValueValidator(999999999999.99),
+        ],
+    )
     is_enabled = models.BooleanField(default=True)
     time_frame = models.CharField(choices=TimeFrames.choices, max_length=10)
 

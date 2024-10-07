@@ -22,5 +22,6 @@ class BadResponse(Response):
     def __init__(
         self, message, errors=None, status_code=status.HTTP_400_BAD_REQUEST, **kwargs
     ):
+        errors = errors or {}
         response_data = {"message": message, "extra": errors, "status": status_code}
         super().__init__(data=response_data, status=status_code, **kwargs)
