@@ -24,5 +24,8 @@ from django.conf import settings
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("api/v1/user/", include("users.urls")),
+    path("api/v1/users/", include("users.urls")),
+    path("api/v1/transactions/", include("transaction.urls")),
+    path("api/v1/wallets/", include("wallet.urls")),
+    path("api/v1/core/", include("core.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

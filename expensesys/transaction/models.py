@@ -7,6 +7,8 @@ from users.models import User
 from wallet.models import Wallet
 from django.utils import timezone
 
+from django.core.validators import MinValueValidator, MaxValueValidator
+
 # Create your models here.
 
 
@@ -46,11 +48,15 @@ class Transaction(BaseModel):
     transaction_date = models.DateField()
     transaction_time = models.TimeField()
     transaction_type = models.CharField(choices=TransactionTypes.choices, max_length=10)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    description = models.TextField()
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(0.01), MaxValueValidator(999999999999.99)],
+    )
+    description = models.TextField(blank=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
-    note = models.TextField()
-    image = models.ImageField(upload_to=transaction_upload_to, null=True, blank=True)
+    note = models.TextField(blank=True)
+    image = models.ImageField(upload_to=transaction_upload_to, blank=True)
 
     class Meta:
         db_table = "transactions"

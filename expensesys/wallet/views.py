@@ -1,7 +1,7 @@
 from django.shortcuts import render
 
-from expensesys.utilities.exceptions import ApplicationError
-from expensesys.utilities.model_utilities.users import UserUtil
+from utilities.exceptions import ApplicationError
+from utilities.model_utilities.users import UserUtil
 from wallet.models import Wallet
 from utilities.response_wrappers import BadResponse, OKResponse
 from utilities.base_api_views import PublicAPIView
@@ -21,6 +21,11 @@ class CreateWalletAPI(PublicAPIView):
                 "icon",
                 "is_enabled",
             ]
+            extra_kwargs = {
+                "user": {"required": True, "allow_null": False},
+                "icon": {"required": True, "allow_null": False},
+                "is_enabled": {"required": True},
+            }
 
         def validate(self, data):
             user_ = UserUtil(self.context["request"].user)
@@ -37,8 +42,10 @@ class CreateWalletAPI(PublicAPIView):
             data=request.data, context={"request": request}
         )
         input_serializer.is_valid(raise_exception=True)
-        input_serializer.save()
-        return OKResponse(message="Wallet created successfully")
+        # input_serializer.save()
+        return OKResponse(
+            message="Wallet created successfully", data=input_serializer.data
+        )
 
 
 class GetWalletDetailAPI(PublicAPIView):
