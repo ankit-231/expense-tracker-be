@@ -10,12 +10,9 @@ from django.contrib.auth.password_validation import (
     CommonPasswordValidator,
     NumericPasswordValidator,
 )
-from django.dispatch import receiver
 from django.db.models.signals import post_save
 
-# from core.models import SoftDeleteModel
-from django.apps import apps
-from django_softdelete.models import SoftDeleteModel
+from utilities.base_models import BaseModel
 
 
 def custom_upload_to(instance, filename):
@@ -23,6 +20,16 @@ def custom_upload_to(instance, filename):
 
 
 # Create your models here.
+
+
+class Currency(BaseModel):
+    name = models.CharField(max_length=255)
+    symbol = models.CharField(max_length=255)
+    country = models.CharField(max_length=255)
+    code = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = "currencies"
 
 
 # IMP: when filtering User, use is_deleted=False
@@ -55,4 +62,7 @@ class User(AbstractUser):
         },
     )
     password_reset_token = models.CharField(max_length=255, blank=True, default="")
+    currency = models.ForeignKey(
+        Currency, on_delete=SET_NULL, null=True, related_name="users"
+    )
     is_deleted = models.BooleanField(default=False)
