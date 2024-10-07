@@ -22,11 +22,9 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
                 self.error_messages["no_active_account"],
                 "no_active_account",
             )
-        print(data)
 
         # Add your extra responses here
         data["username"] = self.user.username
-        data["role"] = self.user.role
         return data
 
 
@@ -66,3 +64,55 @@ class CreateUserAPI(PublicAPIView):
         input_serializer.is_valid(raise_exception=True)
         input_serializer.save()
         return OKResponse(message="User created successfully")
+
+
+class ChangePasswordAPI(AuthenticatedAPIView):
+
+    class InputSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = User
+            fields = ("password",)
+
+    def post(self, request):
+        input_serializer = self.InputSerializer(data=request.data)
+        input_serializer.is_valid(raise_exception=True)
+        user = request.user
+        user.set_password(input_serializer.data["password"])
+        user.save()
+        return OKResponse(message="Password changed successfully")
+
+
+class EditUserAPI(AuthenticatedAPIView):
+
+    class InputSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = User
+            fields = ("email", "currency")
+
+    def post(self, request):
+        input_serializer = self.InputSerializer(data=request.data)
+        input_serializer.is_valid(raise_exception=True)
+        input_serializer.save()
+        return OKResponse(message="User updated successfully")
+
+
+class DeleteUserAPI(AuthenticatedAPIView):
+
+    def post(self, request):
+        user = request.user
+        user.is_deleted = True
+        user.save()
+        return OKResponse(message="User deleted successfully")
+
+
+class GetUserDetailAPI(AuthenticatedAPIView):
+
+    class OutputSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = User
+            fields = ["id", "username", "email", "currency"]
+
+    def get(self, request):
+        user = request.user
+        output_serializer = self.OutputSerializer(user)
+        return OKResponse(data=output_serializer.data)

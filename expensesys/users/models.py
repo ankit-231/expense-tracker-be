@@ -12,6 +12,7 @@ from django.contrib.auth.password_validation import (
 )
 from django.db.models.signals import post_save
 
+from core.models import Currency
 from utilities.base_models import BaseModel
 
 
@@ -20,16 +21,6 @@ def custom_upload_to(instance, filename):
 
 
 # Create your models here.
-
-
-class Currency(BaseModel):
-    name = models.CharField(max_length=255)
-    symbol = models.CharField(max_length=255)
-    country = models.CharField(max_length=255)
-    code = models.CharField(max_length=255)
-
-    class Meta:
-        db_table = "currencies"
 
 
 # IMP: when filtering User, use is_deleted=False
@@ -66,3 +57,21 @@ class User(AbstractUser):
         Currency, on_delete=SET_NULL, null=True, related_name="users"
     )
     is_deleted = models.BooleanField(default=False)
+
+
+class Budget(BaseModel):
+
+    class TimeFrames(models.TextChoices):
+        WEEK = "WEEK", "Week"
+        MONTH = "MONTH", "Month"
+
+    user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="budgets"
+    )
+    name = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    is_enabled = models.BooleanField(default=True)
+    time_frame = models.CharField(choices=TimeFrames.choices, max_length=10)
+
+    class Meta:
+        db_table = "budgets"
