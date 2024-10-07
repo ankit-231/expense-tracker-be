@@ -24,3 +24,14 @@ class ServerSetupLog(models.Model):
 
     class Meta:
         db_table = "server_setup_logs"
+
+
+class Icon(models.Model):
+    name = models.CharField(max_length=255)
+    svg_data = models.TextField()  # raw svg code
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = "icons"

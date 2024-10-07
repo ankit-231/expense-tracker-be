@@ -4,7 +4,7 @@ from rest_framework import exceptions
 from rest_framework_simplejwt.views import TokenObtainPairView
 from utilities.base_api_views import AuthenticatedAPIView, PublicAPIView
 from utilities.response_wrappers import OKResponse
-from users.models import User
+from users.models import Budget, User
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
@@ -116,3 +116,19 @@ class GetUserDetailAPI(AuthenticatedAPIView):
         user = request.user
         output_serializer = self.OutputSerializer(user)
         return OKResponse(data=output_serializer.data)
+
+
+class CreateBudgetAPI(AuthenticatedAPIView):
+
+    class InputSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = Budget
+            fields = ["name", "amount", "is_enabled", "time_frame", "user"]
+
+    def post(self, request):
+        user = request.user
+        data = request.data
+        data.update({"user": user.id})
+        input_serializer = self.InputSerializer(data=data, context={"request": request})
+        input_serializer.is_valid(raise_exception=True)
+        input_serializer.save()

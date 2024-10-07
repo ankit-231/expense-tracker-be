@@ -15,6 +15,7 @@ class CreateWalletAPI(PublicAPIView):
         class Meta:
             model = Wallet
             fields = [
+                "user",
                 "name",
                 "initial_amount",
                 "icon",
@@ -30,6 +31,8 @@ class CreateWalletAPI(PublicAPIView):
             return data
 
     def post(self, request):
+        data = request.data
+        data.update({"user": request.user.id})
         input_serializer = self.InputSerializer(
             data=request.data, context={"request": request}
         )
@@ -106,3 +109,13 @@ class UpdateWalletAPI(PublicAPIView):
         input_serializer.is_valid(raise_exception=True)
         input_serializer.save()
         return OKResponse(message="Wallet updated successfully")
+
+
+class DeleteWalletAPI(PublicAPIView):
+    def post(self, request, pk):
+        user = request.user
+        wallet = Wallet.objects.filter(user=user, pk=pk).last()
+        if not wallet:
+            return ApplicationError("Wallet not found")
+        wallet.delete()
+        return OKResponse(message="Wallet deleted successfully")

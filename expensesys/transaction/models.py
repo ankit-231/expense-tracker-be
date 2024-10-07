@@ -1,5 +1,6 @@
 from django.db import models
 
+from core.models import Icon
 from utilities.base_models import BaseModel
 
 from users.models import User
@@ -10,7 +11,14 @@ from django.utils import timezone
 
 
 class Category(BaseModel):
+
+    class CategoryTypes(models.TextChoices):
+        CREDIT = "cr"
+        DEBIT = "db"
+
     name = models.CharField(max_length=100)
+    category_type = models.CharField(choices=CategoryTypes.choices, max_length=10)
+    icon = models.ForeignKey(Icon, on_delete=models.SET_NULL, null=True)
 
     class Meta:
         db_table = "categories"
@@ -22,8 +30,8 @@ class Category(BaseModel):
 class Transaction(BaseModel):
 
     class TransactionTypes(models.TextChoices):
-        CREDIT = "CREDIT", "cr"
-        DEBIT = "DEBIT", "db"
+        CREDIT = "cr"
+        DEBIT = "db"
 
     def transaction_upload_to(self, filename):
         today = timezone.now()
