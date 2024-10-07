@@ -1,6 +1,7 @@
 import os
 from django.db import models
 
+from core.models import Icon
 from utilities.base_models import BaseModel
 from users.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -25,7 +26,7 @@ class Wallet(BaseModel):
             MaxValueValidator(999999999999.99),
         ],
     )
-    icon = models.ImageField(upload_to=wallet_icon_upload_to, default="")
+    icon = models.ForeignKey(Icon, on_delete=models.SET_NULL, null=True)
     is_enabled = models.BooleanField(default=True)
 
     class Meta:

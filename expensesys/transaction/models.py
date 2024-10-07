@@ -50,7 +50,7 @@ class Transaction(BaseModel):
     description = models.TextField()
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
     note = models.TextField()
-    image = models.ImageField(upload_to="transactions/", null=True, blank=True)
+    image = models.ImageField(upload_to=transaction_upload_to, null=True, blank=True)
 
     class Meta:
         db_table = "transactions"
