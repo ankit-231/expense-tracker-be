@@ -2,6 +2,8 @@ from django.shortcuts import render
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import exceptions
 from rest_framework_simplejwt.views import TokenObtainPairView
+from utilities.base_api_views import AuthenticatedAPIView, PublicAPIView
+from utilities.response_wrappers import OKResponse
 from users.models import User
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -32,8 +34,7 @@ class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
 
-class GetUserMeDetail(APIView):
-    permission_classes = (IsAuthenticated,)
+class GetUserMeDetail(AuthenticatedAPIView):
 
     class OutputSerializer(serializers.ModelSerializer):
         class Meta:
@@ -51,3 +52,17 @@ class GetUserMeDetail(APIView):
         status_code = status.HTTP_200_OK
         res = {"data": data_, "message": message, "status": status_code}
         return Response(res, status=status_code)
+
+
+class CreateUserAPI(PublicAPIView):
+
+    class InputSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = User
+            fields = ("username", "email", "password", "currency")
+
+    def post(self, request):
+        input_serializer = self.InputSerializer(data=request.data)
+        input_serializer.is_valid(raise_exception=True)
+        input_serializer.save()
+        return OKResponse(message="User created successfully")
