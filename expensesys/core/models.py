@@ -5,6 +5,7 @@ from utilities.base_models import BaseModel
 
 # Create your models here.
 
+
 class Budget(BaseModel):
 
     class TimeFrames(models.TextChoices):
