@@ -10,11 +10,11 @@ class Command(BaseCommand):
         try:
             # populate Icon table
             with transaction.atomic():
-                if not Icon.objects.exists():
-                    self._populate_icons()
-                    self.stdout.write(
-                        self.style.SUCCESS("Icon table populated successfully!")
-                    )
+                # if not Icon.objects.exists():
+                self._populate_icons()
+                self.stdout.write(
+                    self.style.SUCCESS("Icon table populated successfully!")
+                )
 
         except Exception as e:
             raise CommandError(f"Error during initial server setup: {e}")
@@ -24,18 +24,19 @@ class Command(BaseCommand):
         populates icons that have not already been added
         """
         try:
-            from utilities.svgs import svgs
+            from utilities.svgs import icons as all_icons
         except ImportError:
             raise CommandError(
                 "Error during initial server setup: svgs module not found"
             )
         existing_icons = Icon.objects.values_list("name", flat=True)
-        svgs = [icon for icon in svgs if icon["name"] not in existing_icons]
+        svgs = [icon for icon in all_icons if icon["name"] not in existing_icons]
         Icon.objects.bulk_create(
             [
                 Icon(
                     name=icon["name"],
-                    svg_data=icon["svg_data"],
+                    svg_data="",
+                    class_name=icon["class_name"],
                 )
                 for icon in svgs
             ]

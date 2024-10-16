@@ -15,6 +15,7 @@ from django.db.models.signals import post_save
 from core.models import Currency
 from utilities.base_models import BaseModel
 from django.core.validators import MinValueValidator, MaxValueValidator
+from decimal import Decimal
 
 
 def custom_upload_to(instance, filename):
@@ -74,8 +75,8 @@ class Budget(BaseModel):
         max_digits=10,
         decimal_places=2,
         validators=[
-            MinValueValidator(0.01),
-            MaxValueValidator(999999999999.99),
+            MinValueValidator(Decimal("0.01")),
+            MaxValueValidator(Decimal("999999999999.99")),
         ],
     )
     is_enabled = models.BooleanField(default=True)

@@ -1,9 +1,14 @@
 from django.shortcuts import render
 
+from utilities.general import get_week_day
+from utilities.model_utilities.users import UserUtil
+from utilities.exceptions import ApplicationError
 from utilities.response_wrappers import OKResponse
 from transaction.models import Transaction
 from utilities.base_api_views import AuthenticatedAPIView, PublicAPIView
 from rest_framework import serializers
+from django.db.models.functions import ExtractWeekDay, Abs
+from django.db.models import Sum, Case, When, F, DecimalField, Value, CharField
 
 # Create your views here.
 
@@ -39,11 +44,12 @@ class CreateTransactionAPI(AuthenticatedAPIView):
         return OKResponse(data=serializer.data)
 
 
-class GetTransactionListAPI(PublicAPIView):
+class GetTransactionDetailAPI(PublicAPIView):
     class OutputSerializer(serializers.ModelSerializer):
         class Meta:
             model = Transaction
             fields = [
+                "id",
                 "wallet",
                 "transaction_date",
                 "transaction_time",
@@ -55,9 +61,125 @@ class GetTransactionListAPI(PublicAPIView):
                 "image",
             ]
 
+    def get(self, request, pk):
+        transaction = Transaction.objects.get(pk=pk)
+
+        output_serializer = self.OutputSerializer(transaction)
+        return OKResponse(data=output_serializer.data)
+
+
+class GetTransactionListAPI(PublicAPIView):
+
+    output_serializer = GetTransactionDetailAPI.OutputSerializer
+
     def get(self, request):
         query_params = request.query_params
         print(query_params)
         transactions = Transaction.objects.all()
-        output_serializer = self.OutputSerializer(transactions, many=True)
+        output_serializer = self.output_serializer(transactions, many=True)
+        return OKResponse(data=output_serializer.data)
+
+
+class DeleteTransactionAPI(PublicAPIView):
+
+    output_serializer = GetTransactionDetailAPI.OutputSerializer
+
+    def delete(self, request, pk):
+        transaction = Transaction.objects.filter(pk=pk).last()
+        if not transaction:
+            raise ApplicationError("Transaction not found")
+        transaction.delete()
+        serializer = self.output_serializer(instance=transaction)
+        return OKResponse(data=serializer.data)
+
+
+class GetTransactionListPaginatedAPI(AuthenticatedAPIView):
+
+    class OutputSerializer(serializers.Serializer):
+
+        class TransactionSerializer(serializers.ModelSerializer):
+            wallet_icon = serializers.SerializerMethodField()
+
+            class Meta:
+                model = Transaction
+                fields = [
+                    "id",
+                    "wallet",
+                    "wallet_icon",
+                    "transaction_time",
+                    "amount",
+                    "description",
+                ]
+
+            def get_wallet_icon(self, obj):
+                return obj.wallet.icon.data
+
+        transaction_date = serializers.DateField()
+        day = serializers.CharField()
+        total_amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+        absolute_amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+        transaction_type = serializers.CharField()
+        transactions = TransactionSerializer(many=True)
+
+    def get(self, request):
+        query_params = request.query_params
+        print(query_params)
+        """
+        grouped_transactions = (
+            Transaction.objects.values(
+                "transaction_date",
+            )
+            .annotate(
+                total_amount=Sum("amount"),
+                day=ExtractWeekDay("transaction_date"),
+            )
+            .order_by("transaction_date")
+        )
+
+        total_amount should be the sum of amount but amount is negative if transaction_type == db and + if cr
+        """
+        print("hehe")
+        total_amount_q = Sum(
+            Case(
+                When(
+                    transaction_type=Transaction.TransactionTypes.DEBIT,
+                    then=F("amount") * -1,
+                ),
+                When(
+                    transaction_type=Transaction.TransactionTypes.CREDIT,
+                    then=F("amount"),
+                ),
+                output_field=DecimalField(),
+            )
+        )
+        grouped_transactions = (
+            Transaction.objects.values(
+                "transaction_date",
+            )
+            .annotate(
+                total_amount=total_amount_q,
+                absolute_amount=Abs(total_amount_q),
+                transaction_type=Case(  # "+" or "-" based on transaction_type
+                    When(
+                        total_amount__lt=0,
+                        then=Value(Transaction.TransactionTypes.DEBIT),
+                    ),
+                    When(
+                        total_amount__gte=0,
+                        then=Value(Transaction.TransactionTypes.CREDIT),
+                    ),
+                    output_field=CharField(),
+                ),
+                day=ExtractWeekDay("transaction_date"),
+            )
+            .order_by("transaction_date")
+        )
+        user_ = UserUtil(request.user)
+        for grouped_transaction in grouped_transactions:
+            print(grouped_transaction)
+            grouped_transaction["transactions"] = user_.all_transactions(
+                transaction_date=grouped_transaction["transaction_date"]
+            )
+            grouped_transaction["day"] = get_week_day(grouped_transaction["day"])
+        output_serializer = self.OutputSerializer(grouped_transactions, many=True)
         return OKResponse(data=output_serializer.data)

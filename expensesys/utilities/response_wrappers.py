@@ -14,7 +14,7 @@ from rest_framework.serializers import as_serializer_error
 class OKResponse(Response):
     def __init__(self, *, message="Success", data=None, **kwargs):
         status_code = status.HTTP_200_OK
-        response_data = {"message": message, "data": data, "status": status_code}
+        response_data = {"data": data, "message": message, "status": status_code}
         super().__init__(data=response_data, status=status_code, **kwargs)
 
 

@@ -5,6 +5,7 @@ from core.models import Icon
 from utilities.base_models import BaseModel
 from users.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+from decimal import Decimal
 
 # Create your models here.
 
@@ -22,11 +23,11 @@ class Wallet(BaseModel):
         max_digits=10,
         decimal_places=2,
         validators=[
-            MinValueValidator(0.01),
-            MaxValueValidator(999999999999.99),
+            MinValueValidator(Decimal("0.00")),
+            MaxValueValidator(Decimal("999999999999.99")),
         ],
     )
-    icon = models.ForeignKey(Icon, on_delete=models.SET_NULL, null=True)
+    icon = models.ForeignKey(Icon, default=None, on_delete=models.SET_NULL, null=True)
     is_enabled = models.BooleanField(default=True)
 
     class Meta:

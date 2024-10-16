@@ -18,3 +18,26 @@ svgs = [
                 """,
     },
 ]
+
+icons = [
+    {"name": "wallet", "class_name": "fas fa-wallet"},
+    {"name": "money-bill", "class_name": "fas fa-money-bill"},
+    {"name": "money-bill-wave", "class_name": "fas fa-money-bill-wave"},
+    {"name": "coins", "class_name": "fas fa-coins"},
+    {"name": "credit-card", "class_name": "fas fa-credit-card"},
+    {"name": "hand-holding-usd", "class_name": "fas fa-hand-holding-usd"},
+    {"name": "dollar-sign", "class_name": "fas fa-dollar-sign"},
+    {"name": "piggy-bank", "class_name": "fas fa-piggy-bank"},
+    {"name": "shopping-cart", "class_name": "fas fa-shopping-cart"},
+    {"name": "receipt", "class_name": "fas fa-receipt"},
+    {"name": "bank", "class_name": "fas fa-bank"},
+    {"name": "chart-line", "class_name": "fas fa-chart-line"},
+    {"name": "chart-pie", "class_name": "fas fa-chart-pie"},
+    {"name": "file-invoice-dollar", "class_name": "fas fa-file-invoice-dollar"},
+    {"name": "cash-register", "class_name": "fas fa-cash-register"},
+    {"name": "store", "class_name": "fas fa-store"},
+    {"name": "gift", "class_name": "fas fa-gift"},
+    {"name": "donate", "class_name": "fas fa-donate"},
+    {"name": "sack-dollar", "class_name": "fas fa-sack-dollar"},
+    {"name": "lira-sign", "class_name": "fas fa-lira-sign"},
+]

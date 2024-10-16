@@ -8,6 +8,7 @@ from wallet.models import Wallet
 from django.utils import timezone
 
 from django.core.validators import MinValueValidator, MaxValueValidator
+from decimal import Decimal
 
 # Create your models here.
 
@@ -51,7 +52,10 @@ class Transaction(BaseModel):
     amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        validators=[MinValueValidator(0.01), MaxValueValidator(999999999999.99)],
+        validators=[
+            MinValueValidator(Decimal("0.01")),
+            MaxValueValidator(Decimal(999999999999.99)),
+        ],
     )
     description = models.TextField(blank=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)

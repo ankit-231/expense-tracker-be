@@ -35,12 +35,17 @@ class MyTokenObtainPairView(TokenObtainPairView):
 class GetUserMeDetail(AuthenticatedAPIView):
 
     class OutputSerializer(serializers.ModelSerializer):
+        currency = serializers.SerializerMethodField()
         class Meta:
             model = User
             fields = (
                 "id",
                 "username",
+                "currency",
             )
+
+        def get_currency(self, user):
+            return user.currency.symbol
 
     def get(self, request):
         user = request.user

@@ -34,3 +34,16 @@ def insert_categories():
             print(f"Inserted category: {category.name}")
         else:
             print(f"Category already exists: {category.name}")
+
+
+def get_week_day(day: int):
+    days_of_week = {
+        1: "Sunday",
+        2: "Monday",
+        3: "Tuesday",
+        4: "Wednesday",
+        5: "Thursday",
+        6: "Friday",
+        7: "Saturday",
+    }
+    return days_of_week.get(day)

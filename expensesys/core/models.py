@@ -28,7 +28,12 @@ class ServerSetupLog(models.Model):
 
 class Icon(models.Model):
     name = models.CharField(max_length=255)
-    svg_data = models.TextField()  # raw svg code
+    svg_data = models.TextField()  # raw svg code may remove in the future
+    class_name = models.CharField(max_length=255, default="")
+
+    @property
+    def data(self):
+        return self.class_name or self.svg_data
 
     def __str__(self):
         return self.name
