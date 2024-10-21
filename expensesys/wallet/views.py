@@ -1,5 +1,6 @@
 from django.shortcuts import render
 
+from core.models import Icon
 from utilities.exceptions import ApplicationError
 from utilities.model_utilities.users import UserUtil
 from wallet.models import Wallet
@@ -18,7 +19,7 @@ class CreateWalletAPI(PublicAPIView):
                 "user",
                 "name",
                 "initial_amount",
-                # "icon",
+                "icon",
                 # "is_enabled",
             ]
             extra_kwargs = {
@@ -37,7 +38,9 @@ class CreateWalletAPI(PublicAPIView):
 
     def post(self, request):
         data = request.data
-        data.update({"user": request.user.id})
+        # default Icon
+        icon = Icon.objects.first()
+        data.update({"user": request.user.id, "icon": icon.id})
         input_serializer = self.InputSerializer(
             data=request.data, context={"request": request}
         )

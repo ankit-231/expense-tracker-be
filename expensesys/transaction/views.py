@@ -4,7 +4,7 @@ from utilities.general import get_week_day
 from utilities.model_utilities.users import UserUtil
 from utilities.exceptions import ApplicationError
 from utilities.response_wrappers import OKResponse
-from transaction.models import Transaction
+from transaction.models import Category, Transaction
 from utilities.base_api_views import AuthenticatedAPIView, PublicAPIView
 from rest_framework import serializers
 from django.db.models.functions import ExtractWeekDay, Abs
@@ -35,6 +35,15 @@ class CreateTransactionAPI(AuthenticatedAPIView):
                 "category": {"required": True, "allow_null": False},
             }
 
+        def validate(self, data):
+            category = data.get("category")
+            transaction_type = data.get("transaction_type")
+            if category.category_type != transaction_type:
+                raise serializers.ValidationError(
+                    {"category": ["Transaction type and category type do not match"]}
+                )
+            return data
+
     def post(self, request):
         data = request.data
         data.update({"user": request.user.id})
@@ -45,7 +54,11 @@ class CreateTransactionAPI(AuthenticatedAPIView):
 
 
 class GetTransactionDetailAPI(PublicAPIView):
+    wallet_icon = serializers.SerializerMethodField()
+
     class OutputSerializer(serializers.ModelSerializer):
+        wallet_icon = serializers.SerializerMethodField()
+
         class Meta:
             model = Transaction
             fields = [
@@ -59,7 +72,11 @@ class GetTransactionDetailAPI(PublicAPIView):
                 "category",
                 "note",
                 "image",
+                "wallet_icon",
             ]
+
+        def get_wallet_icon(self, obj):
+            return obj.wallet.icon.data
 
     def get(self, request, pk):
         transaction = Transaction.objects.get(pk=pk)
@@ -97,29 +114,12 @@ class GetTransactionListPaginatedAPI(AuthenticatedAPIView):
 
     class OutputSerializer(serializers.Serializer):
 
-        class TransactionSerializer(serializers.ModelSerializer):
-            wallet_icon = serializers.SerializerMethodField()
-
-            class Meta:
-                model = Transaction
-                fields = [
-                    "id",
-                    "wallet",
-                    "wallet_icon",
-                    "transaction_time",
-                    "amount",
-                    "description",
-                ]
-
-            def get_wallet_icon(self, obj):
-                return obj.wallet.icon.data
-
         transaction_date = serializers.DateField()
         day = serializers.CharField()
         total_amount = serializers.DecimalField(max_digits=10, decimal_places=2)
         absolute_amount = serializers.DecimalField(max_digits=10, decimal_places=2)
         transaction_type = serializers.CharField()
-        transactions = TransactionSerializer(many=True)
+        transactions = GetTransactionDetailAPI.OutputSerializer(many=True)
 
     def get(self, request):
         query_params = request.query_params
@@ -172,7 +172,7 @@ class GetTransactionListPaginatedAPI(AuthenticatedAPIView):
                 ),
                 day=ExtractWeekDay("transaction_date"),
             )
-            .order_by("transaction_date")
+            .order_by("-transaction_date")
         )
         user_ = UserUtil(request.user)
         for grouped_transaction in grouped_transactions:
@@ -182,4 +182,72 @@ class GetTransactionListPaginatedAPI(AuthenticatedAPIView):
             )
             grouped_transaction["day"] = get_week_day(grouped_transaction["day"])
         output_serializer = self.OutputSerializer(grouped_transactions, many=True)
+        return OKResponse(data=output_serializer.data)
+
+
+class UpdateTransactionAPI(AuthenticatedAPIView):
+    class InputSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = Transaction
+            fields = [
+                "user",
+                "wallet",
+                "transaction_date",
+                "transaction_time",
+                "transaction_type",
+                "amount",
+                "description",
+                "category",
+                "note",
+                "image",
+            ]
+            extra_kwargs = {
+                "user": {"required": True, "allow_null": False},
+                "wallet": {"required": True, "allow_null": False},
+                "category": {"required": True, "allow_null": False},
+                "image": {"required": True, "allow_null": True},
+            }
+    input_serializer = InputSerializer
+
+    def post(self, request, pk):
+        data = request.data
+        data.update({"user": request.user.id})
+        transaction = Transaction.objects.filter(pk=pk, user=request.user).last()
+        if not transaction:
+            raise ApplicationError("Transaction not found")
+
+        input_serializer = self.input_serializer(transaction, data=data)
+
+        input_serializer.is_valid(raise_exception=True)
+
+        input_serializer.save()
+
+        return OKResponse(data=input_serializer.data)
+
+
+class GetTransactionCategoryListAPI(PublicAPIView):
+
+    class ParamSerializer(serializers.Serializer):
+        category_type = serializers.ChoiceField(choices=Category.CategoryTypes.choices)
+
+    class OutputSerializer(serializers.ModelSerializer):
+        icon = serializers.SerializerMethodField()
+
+        class Meta:
+            model = Category
+            fields = [
+                "id",
+                "name",
+                "category_type",
+                "icon",
+            ]
+
+        def get_icon(self, obj):
+            return obj.icon.class_name
+
+    def get(self, request, category_type):
+        param_serializer = self.ParamSerializer(data=self.kwargs)
+        param_serializer.is_valid(raise_exception=True)
+        categories = Category.objects.filter(category_type=category_type)
+        output_serializer = self.OutputSerializer(categories, many=True)
         return OKResponse(data=output_serializer.data)

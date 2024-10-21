@@ -33,8 +33,8 @@ class Category(BaseModel):
 class Transaction(BaseModel):
 
     class TransactionTypes(models.TextChoices):
-        CREDIT = "cr"
-        DEBIT = "db"
+        CREDIT = Category.CategoryTypes.CREDIT
+        DEBIT = Category.CategoryTypes.DEBIT
 
     def transaction_upload_to(self, filename):
         today = timezone.now()

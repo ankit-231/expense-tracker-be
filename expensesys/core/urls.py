@@ -3,5 +3,5 @@ from core import views
 
 # Create your views here.
 urlpatterns = [
-    # path("core/", views.CoreAPI.as_view()),
+    path("icons/list/", views.GetIconListAPI.as_view()),
 ]
