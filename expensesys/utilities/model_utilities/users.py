@@ -1,6 +1,8 @@
 from transaction.models import Transaction, TransactionWithEnabledWallet
 from users.models import User
 from wallet.models import Wallet
+from django.db.models import Sum
+from django.db import models
 
 
 class UserUtil:
@@ -41,3 +43,25 @@ class UserUtil:
         else:
             transactions = Transaction.objects.filter(user=self.user, *args, **kwargs)
         return transactions
+
+    def get_remaining_balance(self):
+        total_wallet_initial_balance = self.all_wallets().aggregate(
+            total_initial_balance=Sum("initial_amount")
+        )["total_initial_balance"]
+        print(total_wallet_initial_balance)
+        transactions = self.all_transactions()
+        totals = self.all_transactions().aggregate(
+            total_credit=Sum(
+                "amount",
+                filter=models.Q(transaction_type=Transaction.TransactionTypes.CREDIT),
+            ),
+            total_debit=Sum(
+                "amount",
+                filter=models.Q(transaction_type=Transaction.TransactionTypes.DEBIT),
+            ),
+        )
+
+        total_credit = totals["total_credit"]
+        total_debit = totals["total_debit"]
+        remaining_balance = total_wallet_initial_balance - total_debit + total_credit
+        return remaining_balance

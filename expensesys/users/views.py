@@ -2,6 +2,7 @@ from django.shortcuts import render
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import exceptions
 from rest_framework_simplejwt.views import TokenObtainPairView
+from utilities.model_utilities.users import UserUtil
 from utilities.base_api_views import AuthenticatedAPIView, PublicAPIView
 from utilities.response_wrappers import OKResponse
 from users.models import Budget, User
@@ -36,6 +37,7 @@ class GetUserMeDetail(AuthenticatedAPIView):
 
     class OutputSerializer(serializers.ModelSerializer):
         currency = serializers.SerializerMethodField()
+
         class Meta:
             model = User
             fields = (
@@ -137,3 +139,17 @@ class CreateBudgetAPI(AuthenticatedAPIView):
         input_serializer = self.InputSerializer(data=data, context={"request": request})
         input_serializer.is_valid(raise_exception=True)
         input_serializer.save()
+
+
+class GetFinancialDetailAPI(AuthenticatedAPIView):
+
+    class OutputSerializer(serializers.Serializer):
+        balance = serializers.FloatField()
+
+    def get(self, request):
+        user = request.user
+        user_ = UserUtil(user)
+        balance = user_.get_remaining_balance()
+        data = {"balance": balance}
+        output_serializer = self.OutputSerializer(data)
+        return OKResponse(data=output_serializer.data)
