@@ -64,3 +64,24 @@ class Transaction(BaseModel):
 
     class Meta:
         db_table = "transactions"
+
+
+class TransactionWithEnabledWalletManager(models.Manager):
+    def get_queryset(self):
+        # Filter to return transactions where the wallet is enabled
+        return super().get_queryset().filter(wallet__is_enabled=True)
+
+
+class TransactionWithEnabledWallet(Transaction):
+
+    objects = TransactionWithEnabledWalletManager()
+
+    class Meta:
+        proxy = True
+        verbose_name = "Enabled Wallet Transaction"
+        verbose_name_plural = "Enabled Wallet Transactions"
+
+class ChartTypes(models.TextChoices):
+    BAR_GRAPH = "bar_graph"
+    PIE_CHART_CREDIT = "pie_chart_credit"
+    PIE_CHART_DEBIT = "pie_chart_debit"

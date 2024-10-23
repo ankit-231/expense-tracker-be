@@ -47,3 +47,16 @@ def get_week_day(day: int):
         7: "Saturday",
     }
     return days_of_week.get(day)
+
+
+def get_colors_list(n: int, color_type: str = "hsl"):
+    print(color_type)
+    if color_type == "hsl":
+        return [f"hsl({i*137%360}, 64%, 55%)" for i in range(n)]
+    elif color_type == "rgba":
+        return [
+            f"rgba({(i*123)%256}, {(i*211)%256}, {(i*37)%256}, {i/10})"
+            for i in range(n)
+        ]
+    else:
+        raise ValueError(f"Invalid color type: {color_type}")

@@ -10,4 +10,5 @@ urlpatterns = [
     path("detail/<int:pk>/", views.GetTransactionDetailAPI.as_view()),
     path("delete/<int:pk>/", views.DeleteTransactionAPI.as_view()),
     path("categories/list/<str:category_type>/", views.GetTransactionCategoryListAPI.as_view()),
+    path("statistics/monthly/<int:year>/<int:month>/", views.GetMonthlyStatisticsAPI.as_view()),
 ]
