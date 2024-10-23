@@ -40,12 +40,15 @@ class StatisticsUtil:
                     filter=models.Q(
                         transaction_type=Transaction.TransactionTypes.CREDIT
                     ),
+                    default=0,
                 ),
                 total_debit=Sum(
                     "amount",
                     filter=models.Q(
                         transaction_type=Transaction.TransactionTypes.DEBIT
                     ),
+                    default=0,
+
                 ),
             )
             .order_by("transaction_date__day")
@@ -95,6 +98,7 @@ class StatisticsUtil:
                 total_data=Sum(
                     "amount",
                     filter=models.Q(transaction_type=transaction_type),
+                    default=0,
                 ),
             )
             .order_by("category")

@@ -49,15 +49,17 @@ class UserUtil:
             total_initial_balance=Sum("initial_amount")
         )["total_initial_balance"]
         print(total_wallet_initial_balance)
-        transactions = self.all_transactions()
+        # transactions = self.all_transactions()
         totals = self.all_transactions().aggregate(
             total_credit=Sum(
                 "amount",
                 filter=models.Q(transaction_type=Transaction.TransactionTypes.CREDIT),
+                default=0,
             ),
             total_debit=Sum(
                 "amount",
                 filter=models.Q(transaction_type=Transaction.TransactionTypes.DEBIT),
+                default=0,
             ),
         )
 

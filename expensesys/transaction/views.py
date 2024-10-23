@@ -160,6 +160,7 @@ class GetTransactionListPaginatedAPI(AuthenticatedAPIView):
                     transaction_type=Transaction.TransactionTypes.CREDIT,
                     then=F("amount"),
                 ),
+                default=0,
                 output_field=DecimalField(),
             )
         )
