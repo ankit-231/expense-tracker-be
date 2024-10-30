@@ -1,4 +1,5 @@
 # responses.py
+from django.http import Http404
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import exception_handler
@@ -38,6 +39,14 @@ def custom_exception_handler(exc, ctx):
             }
             return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
+        return response
+
+    # Handle Http404
+    if isinstance(exc, Http404):
+        response.data["message"] = "Not found"
+        response.data["extra"] = response.data["detail"]
+        response.data["status"] = status.HTTP_404_NOT_FOUND
+        del response.data["detail"]
         return response
 
     if isinstance(exc.detail, (list, dict)):

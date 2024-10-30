@@ -53,27 +53,6 @@ class CreateWalletAPI(PublicAPIView):
 
 class GetWalletDetailAPI(PublicAPIView):
     class OutputSerializer(serializers.ModelSerializer):
-        class Meta:
-            model = Wallet
-            fields = [
-                "id",
-                "name",
-                "initial_amount",
-                "icon",
-                "is_enabled",
-            ]
-
-    def get(self, request, pk):
-        user = request.user
-        wallet = Wallet.objects.filter(user=user, pk=pk).last()
-        if not wallet:
-            raise ApplicationError("Wallet not found")
-        output_serializer = self.OutputSerializer(wallet)
-        return OKResponse(data=output_serializer.data)
-
-
-class GetWalletListAPI(PublicAPIView):
-    class OutputSerializer(serializers.ModelSerializer):
         icon = serializers.SerializerMethodField()
 
         class Meta:
@@ -91,10 +70,34 @@ class GetWalletListAPI(PublicAPIView):
                 return obj.icon.data
             return None
 
-    def get(self, request):
+    def get(self, request, pk):
         user = request.user
-        wallets = Wallet.objects.filter(user=user)
-        output_serializer = self.OutputSerializer(wallets, many=True)
+        wallet = Wallet.objects.filter(user=user, pk=pk).last()
+        if not wallet:
+            raise ApplicationError("Wallet not found")
+        output_serializer = self.OutputSerializer(wallet)
+        return OKResponse(data=output_serializer.data)
+
+
+class GetWalletListAPI(PublicAPIView):
+
+    class ParamSerializer(serializers.Serializer):
+        result = serializers.ChoiceField(choices=["all", "enabled"])
+
+    output_serializer = GetWalletDetailAPI.OutputSerializer
+
+    def get(self, request, result):
+        user = request.user
+        param_serializer = self.ParamSerializer(data=self.kwargs)
+        param_serializer.is_valid(raise_exception=True)
+
+        enabled = param_serializer.data.get("result") == "enabled"
+
+        user_ = UserUtil(user, enabled_wallet=enabled)
+
+        wallets = user_.all_wallets()
+
+        output_serializer = self.output_serializer(wallets, many=True)
         return OKResponse(data=output_serializer.data)
 
 
@@ -135,7 +138,7 @@ class UpdateWalletAPI(PublicAPIView):
 
 class DeleteWalletAPI(PublicAPIView):
 
-    output_serializer = GetWalletListAPI.OutputSerializer
+    output_serializer = GetWalletDetailAPI.OutputSerializer
 
     def delete(self, request, pk):
         user = request.user
@@ -157,7 +160,7 @@ class UpdateWalletStatusAPI(PublicAPIView):
             ]
 
     input_serializer = InputSerializer
-    output_serializer = GetWalletListAPI.OutputSerializer
+    output_serializer = GetWalletDetailAPI.OutputSerializer
 
     def post(self, request, pk):
         user = request.user

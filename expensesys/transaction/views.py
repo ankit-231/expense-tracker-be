@@ -1,5 +1,5 @@
 from django.forms import FloatField
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 
 from utilities.statistics import StatisticsUtil
 from utilities.general import get_week_day
@@ -121,6 +121,24 @@ class DeleteTransactionAPI(PublicAPIView):
 
 class GetTransactionListPaginatedAPI(AuthenticatedAPIView):
 
+    class QueryParamSerializer(serializers.Serializer):
+        start_date = serializers.DateField(required=False)
+        end_date = serializers.DateField(required=False)
+
+        def validate(self, data):
+            # NOTE: ^ is xor operator returns True if the two operands are not equal
+            data["is_date_included"] = False
+            if ("start_date" in data) ^ ("end_date" in data):
+                raise serializers.ValidationError(
+                    {"start_date": ["Both start_date and end_date are required."]}
+                )
+            if ("start_date" in data) and ("end_date" in data):
+                if data["start_date"] > data["end_date"]:
+                    raise serializers.ValidationError(
+                        {"start_date": ["Start date should be less than end date."]}
+                    )
+            return data
+
     class OutputSerializer(serializers.Serializer):
 
         transaction_date = serializers.DateField()
@@ -130,9 +148,10 @@ class GetTransactionListPaginatedAPI(AuthenticatedAPIView):
         transaction_type = serializers.CharField()
         transactions = GetTransactionDetailAPI.OutputSerializer(many=True)
 
+    query_param_serializer = QueryParamSerializer
+    output_serializer = OutputSerializer
+
     def get(self, request):
-        query_params = request.query_params
-        print(query_params)
         """
         grouped_transactions = (
             Transaction.objects.values(
@@ -147,7 +166,17 @@ class GetTransactionListPaginatedAPI(AuthenticatedAPIView):
 
         total_amount should be the sum of amount but amount is negative if transaction_type == db and + if cr
         """
-        print("hehe")
+
+        query_params = request.query_params
+        query_param_serializer = self.query_param_serializer(data=query_params)
+        query_param_serializer.is_valid(raise_exception=True)
+        query_params = query_param_serializer.data
+
+        is_date_included = ("start_date" in query_params) and (
+            "end_date" in query_params
+        )
+
+        print(is_date_included, "is_date_included")
         user_ = UserUtil(request.user)
 
         total_amount_q = Sum(
@@ -162,10 +191,20 @@ class GetTransactionListPaginatedAPI(AuthenticatedAPIView):
                 ),
                 default=0,
                 output_field=DecimalField(),
-            )
+            ),
         )
+
+        date_q = (
+            models.Q(
+                transaction_date__gte=query_params["start_date"],
+                transaction_date__lte=query_params["end_date"],
+            )
+            if is_date_included
+            else models.Q()
+        )
+
         grouped_transactions = (
-            user_.all_transactions()
+            user_.all_transactions(date_q)
             .values(
                 "transaction_date",
             )
@@ -188,7 +227,7 @@ class GetTransactionListPaginatedAPI(AuthenticatedAPIView):
             .order_by("-transaction_date")
         )
         for grouped_transaction in grouped_transactions:
-            print(grouped_transaction)
+            # print(grouped_transaction)
             grouped_transaction["transactions"] = user_.all_transactions(
                 transaction_date=grouped_transaction["transaction_date"]
             )
@@ -244,7 +283,7 @@ class GetTransactionCategoryListAPI(PublicAPIView):
         category_type = serializers.ChoiceField(choices=Category.CategoryTypes.choices)
 
     class OutputSerializer(serializers.ModelSerializer):
-        icon = serializers.SerializerMethodField()
+        icon_class = serializers.SerializerMethodField()
 
         class Meta:
             model = Category
@@ -253,9 +292,10 @@ class GetTransactionCategoryListAPI(PublicAPIView):
                 "name",
                 "category_type",
                 "icon",
+                "icon_class",
             ]
 
-        def get_icon(self, obj):
+        def get_icon_class(self, obj):
             return obj.icon.class_name
 
     def get(self, request, category_type):
@@ -327,4 +367,64 @@ class GetMonthlyStatisticsAPI(AuthenticatedAPIView):
             )
 
         output_serializer = self.OutputSerializer(output_data)
+        return OKResponse(data=output_serializer.data)
+
+
+class CreateTransactionCategoryAPI(AuthenticatedAPIView):
+    class InputSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = Category
+            fields = [
+                "name",
+                "category_type",
+                "icon",
+            ]
+            extra_kwargs = {
+                "icon": {"required": True, "allow_null": False},
+            }
+
+    input_serializer = InputSerializer
+
+    def post(self, request):
+        data = request.data
+        input_serializer = self.input_serializer(data=data)
+        input_serializer.is_valid(raise_exception=True)
+        input_serializer.save()
+        return OKResponse(data=input_serializer.data)
+
+
+class UpdateTransactionCategoryAPI(AuthenticatedAPIView):
+
+    class InputSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = Category
+            fields = [
+                "name",
+                "icon",
+            ]
+            extra_kwargs = {
+                "icon": {"required": True, "allow_null": False},
+            }
+
+    input_serializer = InputSerializer
+
+    def post(self, request, pk):
+        data = request.data
+
+        category = get_object_or_404(Category, pk=pk)
+
+        input_serializer = self.input_serializer(category, data=data)
+        input_serializer.is_valid(raise_exception=True)
+        input_serializer.save()
+        return OKResponse(data=input_serializer.data)
+
+
+class DeleteTransactionCategoryAPI(AuthenticatedAPIView):
+
+    output_serializer = GetTransactionCategoryListAPI.OutputSerializer
+
+    def delete(self, request, pk):
+        category = get_object_or_404(Category, pk=pk)
+        category.delete()
+        output_serializer = self.output_serializer(category)
         return OKResponse(data=output_serializer.data)

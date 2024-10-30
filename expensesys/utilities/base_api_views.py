@@ -3,7 +3,10 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 
 
 class BaseAPIView(APIView):
-    pass
+    param_serializer = None
+    query_param_serializer = None
+    input_serializer = None
+    output_serializer = None
 
 
 class PublicAPIView(BaseAPIView):

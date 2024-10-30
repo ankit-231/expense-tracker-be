@@ -46,7 +46,7 @@ class UserUtil:
 
     def get_remaining_balance(self):
         total_wallet_initial_balance = self.all_wallets().aggregate(
-            total_initial_balance=Sum("initial_amount")
+            total_initial_balance=Sum("initial_amount", default=0)
         )["total_initial_balance"]
         print(total_wallet_initial_balance)
         # transactions = self.all_transactions()

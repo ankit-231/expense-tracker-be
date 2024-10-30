@@ -39,9 +39,9 @@ SECRET_KEY = config('DJANGO_SECRET_KEY')
 
 
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [config('DJANGO_ALLOWED_HOST_1'), config('DJANGO_ALLOWED_HOST_2')]
 
-
+# print(ALLOWED_HOSTS)
 # Application definition
 
 DEFAULT_APPS = [
